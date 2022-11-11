@@ -1,0 +1,12 @@
+﻿<Bindings>
+  <Binding name="临时开启TF分数板" description="按键打开，松开关闭" header="TFKB" runOnUp="true">
+    if ( keystate == "down" ) then
+	  showtfs()
+    else
+      hidetfs()
+    end
+  </Binding>
+  <Binding name="锁定开启TF分数板" description="按键打开，再次按键关闭">
+    toggletfs()
+  </Binding>
+</Bindings>

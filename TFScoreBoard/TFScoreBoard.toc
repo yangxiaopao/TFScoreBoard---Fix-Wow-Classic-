@@ -1,0 +1,13 @@
+﻿## Interface: 30400
+## Notes: Hihi, horsies
+## Title: TF Scoreboard
+## Title-zhCN: TF分数板
+## Notes-zhCN: 漂亮的战场分数板
+## Version: 1.0.1
+## X-Mush-Project-Name: TFScoreBoard
+## X-Mush-Packaged-Version: 6
+## X-Mush-UpdateVer: 6
+## SavedVariablesPerCharacter: TFScoreBoard
+
+scoreboard.lua
+bindings.xml
