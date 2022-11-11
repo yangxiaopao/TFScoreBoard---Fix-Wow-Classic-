@@ -147,16 +147,6 @@ numHordeText:SetVertexColor(0.93, 0.89, 0.78)
 numHordeText:SetPoint("CENTER")
 numHordeText:SetText("1个玩家")
 
-numHordeFrame:SetScript("OnEnter",function(self)
-	GameTooltip:SetOwner(self, "ANCHOR_CURSOR")
-	GameTooltip:AddLine("hello world")
-	GameTooltip:Show()
-end)
-
-numHordeFrame:SetScript("OnLeave",function(self)
-	GameTooltip:Hide()
-end)
-
 local hordeScoreText = TFScore:CreateFontString(nil, "MEDIUM");
  setfs(hordeScoreText, 40, "BOTTOM", "TOP", 60, 32, "RIGHT", nil, 0.93, 0.89, 0.78);	
 
@@ -166,7 +156,7 @@ local TFAllitext = TFScore:CreateFontString(nil, "MEDIUM");
  --player num frame alliance
 
 local numAllianceFrame = CreateFrame("Frame",nil,TFScore)
-numAllianceFrame:SetPoint("BOTTOMLEFT",TFScore,"TOPLEFT",20,30)
+numAllianceFrame:SetPoint("BOTTOMLEFT",TFScore,"TOPLEFT",150,34)
 numAllianceFrame:SetSize(100,20)
 
 local numAllianceText = numAllianceFrame:CreateFontString(nil, "MEDIUM");
@@ -174,16 +164,6 @@ numAllianceText:SetFont(GameFontNormal:GetFont(), 16)
 numAllianceText:SetVertexColor(0.93, 0.89, 0.78)
 numAllianceText:SetPoint("CENTER")
 numAllianceText:SetText("1个玩家")
-
-numAllianceFrame:SetScript("OnEnter",function(self)
-	GameTooltip:SetOwner(self, "ANCHOR_CURSOR")
-	GameTooltip:AddLine("hello world")
-	GameTooltip:Show()
-end)
-
-numAllianceFrame:SetScript("OnLeave",function(self)
-	GameTooltip:Hide()
-end)
 
 local allianceScoreText = TFScore:CreateFontString(nil, "MEDIUM");
  setfs(allianceScoreText, 40, "BOTTOM", "TOP", -60, 32, "LEFT", nil, 0.93, 0.89, 0.78);
@@ -315,6 +295,13 @@ local function updateHorde()
 	end
 end
 
+local function updateRealm()
+	while k < 81 do
+
+	end
+
+end		
+
 local function updateAlliance()
 	local k=1
 	local name, killingBlows, honorableKills, deaths, honorGained, faction, classToken, damageDone, healingDone, temp
@@ -354,20 +341,59 @@ local function updateAlliance()
 	end
 end
 
+local function getRealmText(list)
+	local keys = {}
+	for k, v in pairs(list) do
+		table.insert(keys,k)
+	end
+
+	table.sort(keys,function(keyL,keyR)
+      return list[keyL] > list[keyR]
+	end)
+
+	local realmText = ""
+	for k,v in pairs(keys) do
+		realmText = realmText .. string.format("%s：%s\n",v,list[v])
+	end
+
+	return realmText
+end
+
+
 local function updateMisc()
 	
 	local numHorde = 0
 	local numAlliance = 0
 	local temp
+	local playerRealm = GetRealmName()
+	local list = {}
+	local realmHorde = {}
+	local realmAlliance = {}
+
 	for i=1, GetNumBattlefieldScores() do
 		name, killingBlows, honorableKills, deaths, honorGained, faction, _, _,_, classToken, damageDone, healingDone = GetBattlefieldScore(i)
+
+		
+		local _,realm = strsplit("-", name)
+		
+		if(not realm) then realm = playerRealm end
+
 		if ( faction ) then
 			if ( faction == 0 ) then
 				numHorde = numHorde + 1
+				list = realmHorde
 			else
+				list = realmAlliance
 				numAlliance = numAlliance + 1
 			end
 		end
+
+		if(not list[realm]) then 
+			list[realm] = 1
+		else 
+			list[realm] = list[realm] + 1
+		end
+
 		if ( name==UnitName("player") ) then
 			pstats[1]:SetText(killingBlows)
 			pstats[2]:SetText(deaths)
@@ -388,6 +414,32 @@ local function updateMisc()
 			end
 		end
 	end
+
+	local realmHordeText = getRealmText(realmHorde)
+	local realmAllianceText = getRealmText(realmAlliance)
+
+	numHordeFrame:SetScript("OnEnter",function(self)
+		GameTooltip:SetOwner(self, "ANCHOR_CURSOR")
+		GameTooltip:AddLine(realmHordeText)
+		GameTooltip:Show()
+	end)
+
+	numHordeFrame:SetScript("OnLeave",function(self)
+		GameTooltip:Hide()
+	end)
+
+	numAllianceFrame:SetScript("OnEnter",function(self)
+		GameTooltip:SetOwner(self, "ANCHOR_CURSOR")
+		GameTooltip:AddLine(realmAllianceText)
+		GameTooltip:Show()
+	end)
+
+	numAllianceFrame:SetScript("OnLeave",function(self)
+		GameTooltip:Hide()
+	end)
+
+
+
 	numAllianceText:SetText(numAlliance.." 玩家")
 	numHordeText:SetText(numHorde.." 玩家")
 	
@@ -432,6 +484,7 @@ TFScore:SetScript("OnEvent", function(_,event,_)
 		updateHorde()
 		updateAlliance()
 		updateMisc()
+		updateRealm()
 	end
 	
 	if(event=="UPDATE_UI_WIDGET" or event == "PLAYER_ENTERING_BATTLEGROUND") and tfinit then
