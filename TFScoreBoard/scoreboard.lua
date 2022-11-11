@@ -295,13 +295,6 @@ local function updateHorde()
 	end
 end
 
-local function updateRealm()
-	while k < 81 do
-
-	end
-
-end		
-
 local function updateAlliance()
 	local k=1
 	local name, killingBlows, honorableKills, deaths, honorGained, faction, classToken, damageDone, healingDone, temp
@@ -484,7 +477,6 @@ TFScore:SetScript("OnEvent", function(_,event,_)
 		updateHorde()
 		updateAlliance()
 		updateMisc()
-		updateRealm()
 	end
 	
 	if(event=="UPDATE_UI_WIDGET" or event == "PLAYER_ENTERING_BATTLEGROUND") and tfinit then
