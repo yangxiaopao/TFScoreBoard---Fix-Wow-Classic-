@@ -452,23 +452,25 @@ local function updateScores()
 	end
 	for i = 1, GetMaxBattlefieldID() do
 		status, temp = GetBattlefieldStatus(i)
-		if ( status == "active" ) and (temp == "奥特兰克山谷") then
-			pattern = "(%d+)"
-			break;
-		else
-			pattern = "(%d+)/(.+)"
+		if status == "active" then
+			if temp == "奥特兰克山谷" then
+				pattern = "(%d+)"
+				break;
+			else
+				pattern = "(%d+)/(.+)"
+			end
+			if scoreText[1] then
+				allianceScoreText:SetText(scoreText[1]:match(pattern))
+			else
+				allianceScoreText:SetText(nil)
+			end
+
+			if scoreText[2] then	
+				hordeScoreText:SetText(scoreText[2]:match(pattern))
+			else
+				hordeScoreText:SetText(nil)
+			end
 		end
-	end
-	if scoreText[1] then
-		allianceScoreText:SetText(scoreText[1]:match(pattern))
-	else
-		allianceScoreText:SetText(nil)
-	end
-	
-	if scoreText[2] then	
-		hordeScoreText:SetText(scoreText[2]:match(pattern))
-	else
-		hordeScoreText:SetText(nil)
 	end
 end
 	
