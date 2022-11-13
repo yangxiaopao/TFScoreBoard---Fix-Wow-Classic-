@@ -1,4 +1,4 @@
-﻿local TFScore = CreateFrame("Frame",nil,UIParent)
+﻿local TFScore = CreateFrame("Frame","TFScoreBoard",UIParent)
 TFScoreBoard = LibStub("AceAddon-3.0"):NewAddon("TFScoreBoard")
 local TFScoreBoard = TFScoreBoard
 local db
@@ -27,11 +27,53 @@ local myOptionsTable = {
   }
 }
 
+local activeBg = ""
+local allianceScoreText
+local hordeScoreText
+local numAllianceText 
+local numHordeText
+local numHordeFrame
+local numAllianceFrame
+local alliancePlayerIndicator
+local hordePlayerIndicator
+local aScoreChild
+local hScoreChild
+
+local tfinit = nil;
+local classes = {}
+
+local psname = {};
+local pstats = {};
+
+local hclass = {};
+local hnames = {};
+local hkb = {};
+local hdeaths = {};
+
+local aclass = {};
+local anames = {};
+local akb = {};
+local adeaths = {};
+
+local textures = {};
+
+local GetfactionMaxNum = function(bgName) 
+	if bgName == "奥特兰克山谷" then
+		return 40
+	elseif bgName == "冬拥湖" then
+		return 120
+	elseif bgName == "战歌峡谷" then
+		return 10
+	else
+		return 15
+	end
+end
+
 local pmod
 
-local function setfs(frame, size, att1, att2, x, y, just, t, ...)
+local function setfs(parent, frame, size, att1, att2, x, y, just, t, ...)
 	frame:SetFont(GameFontNormal:GetFont(), size,"OUTLINE");
-	frame:SetPoint(att1, TFScore, att2, x, y);
+	frame:SetPoint(att1, parent, att2, x, y);
 	frame:SetJustifyH(just);
 	if t then frame:SetText(t) end;
 	frame:SetVertexColor(...);
@@ -54,23 +96,6 @@ function TFScoreBoard:OnInitialize()
     LibStub("AceConfigRegistry-3.0"):RegisterOptionsTable("TFScoreBoard", myOptionsTable)
 	LibStub("AceConfigDialog-3.0"):AddToBlizOptions("TFScoreBoard", "TFScoreBoard")
 
-	local tfinit = nil;
-	local classes = {}
-
-	local psname = {};
-	local pstats = {};
-
-	local hclass = {};
-	local hnames = {};
-	local hkb = {};
-	local hdeaths = {};
-
-	local aclass = {};
-	local anames = {};
-	local akb = {};
-	local adeaths = {};
-
-	local textures = {};
 	local ti = {
 	{{0,0,0,0.4}, 700, 500, "CENTER", 0, 0},
 	{"Interface\\AddOns\\TFScoreBoard\\tex\\tl", 16, 16, "TOPLEFT", 0, 16, 0, 0, 0, 0.4},
@@ -126,7 +151,7 @@ function TFScoreBoard:OnInitialize()
 	sepstat:SetPoint("BOTTOMRIGHT" ,-32 ,70);
 	sepstat:SetTexture(1, 0.25, 0.2);
 	local pname = TFScore:CreateFontString(nil, "MEDIUM");
-	setfs(pname, 30, "BOTTOMLEFT", "BOTTOMLEFT", 170, 70, "LEFT", 1, 0.25, 0.2);
+	setfs(TFScore,pname, 30, "BOTTOMLEFT", "BOTTOMLEFT", 170, 70, "LEFT", 1, 0.25, 0.2);
 	pname:SetText(UnitName("player"));
 
 	if UnitFactionGroup("player") == "Horde" then
@@ -156,102 +181,139 @@ function TFScoreBoard:OnInitialize()
 	end)
 
 	local TFHordetext = TFScore:CreateFontString(nil, "MEDIUM");
-	 setfs(TFHordetext, 50, "BOTTOMRIGHT", "TOPRIGHT", -20, 30, "RIGHT", "部落", 0.93, 0.89, 0.78);
+	 setfs(TFScore,TFHordetext, 50, "BOTTOMRIGHT", "TOPRIGHT", -20, 30, "RIGHT", "部落", 0.93, 0.89, 0.78);
 
 	 --player num horde
 
-	local numHordeFrame = CreateFrame("Frame",nil,TFScore)
+	numHordeFrame = CreateFrame("Frame",nil,TFScore)
 	numHordeFrame:SetPoint("BOTTOMRIGHT",TFScore,"TOPRIGHT",-150,34)
 	numHordeFrame:SetSize(100,20)
 
-	local numHordeText = numHordeFrame:CreateFontString(nil, "MEDIUM");
+	numHordeText = numHordeFrame:CreateFontString(nil, "MEDIUM");
 	numHordeText:SetFont(GameFontNormal:GetFont(), 16,"OUTLINE")
 	numHordeText:SetVertexColor(0.93, 0.89, 0.78)
 	numHordeText:SetPoint("CENTER")
 	numHordeText:SetText("1个玩家")
 
-	local hordeScoreText = TFScore:CreateFontString(nil, "MEDIUM");
-	 setfs(hordeScoreText, 40, "BOTTOM", "TOP", 60, 32, "RIGHT", nil, 0.93, 0.89, 0.78);	
+	hordeScoreText = TFScore:CreateFontString(nil, "MEDIUM");
+	 setfs(TFScore,hordeScoreText, 40, "BOTTOM", "TOP", 60, 32, "RIGHT", nil, 0.93, 0.89, 0.78);	
 
 	local TFAllitext = TFScore:CreateFontString(nil, "MEDIUM");
-	 setfs(TFAllitext, 50, "BOTTOMLEFT", "TOPLEFT", 20, 30, "RIGHT", "联盟", 0.93, 0.89, 0.78);
+	 setfs(TFScore,TFAllitext, 50, "BOTTOMLEFT", "TOPLEFT", 20, 30, "RIGHT", "联盟", 0.93, 0.89, 0.78);
 
 	 --player num frame alliance
 
-	local numAllianceFrame = CreateFrame("Frame",nil,TFScore)
+	numAllianceFrame = CreateFrame("Frame",nil,TFScore)
 	numAllianceFrame:SetPoint("BOTTOMLEFT",TFScore,"TOPLEFT",150,34)
 	numAllianceFrame:SetSize(100,20)
 
-	local numAllianceText = numAllianceFrame:CreateFontString(nil, "MEDIUM");
+	numAllianceText = numAllianceFrame:CreateFontString(nil, "MEDIUM");
 	numAllianceText:SetFont(GameFontNormal:GetFont(), 16,"OUTLINE")
 	numAllianceText:SetVertexColor(0.93, 0.89, 0.78)
 	numAllianceText:SetPoint("CENTER")
 	numAllianceText:SetText("1个玩家")
 
-	local allianceScoreText = TFScore:CreateFontString(nil, "MEDIUM");
-	 setfs(allianceScoreText, 40, "BOTTOM", "TOP", -60, 32, "LEFT", nil, 0.93, 0.89, 0.78);
+	allianceScoreText = TFScore:CreateFontString(nil, "MEDIUM");
+	 setfs(TFScore,allianceScoreText, 40, "BOTTOM", "TOP", -60, 32, "LEFT", nil, 0.93, 0.89, 0.78);
 		
 	local nameheader1 = TFScore:CreateFontString(nil, "MEDIUM");
-	 setfs(nameheader1, 14, "TOPLEFT", "TOPLEFT", 45, 2, "LEFT", "名字", 1,1,1);
+	 setfs(TFScore,nameheader1, 14, "TOPLEFT", "TOPLEFT", 45, 2, "LEFT", "名字", 1,1,1);
 	local killsheader1 = TFScore:CreateFontString(nil, "MEDIUM");
-	 setfs(killsheader1, 14, "TOP", "TOP", -65, 2, "LEFT", "击杀", 1,1,1);
+	 setfs(TFScore,killsheader1, 14, "TOP", "TOP", -70, 2, "LEFT", "击杀", 1,1,1);
 	local deathsheader1 = TFScore:CreateFontString(nil, "MEDIUM");
-	 setfs(deathsheader1, 14, "TOP", "TOP", -30, 2, "LEFT", "死亡", 1,1,1);
+	 setfs(TFScore,deathsheader1, 14, "TOP", "TOP", -30, 2, "LEFT", "死亡", 1,1,1);
 		
 	local nameheader2 = TFScore:CreateFontString(nil, "MEDIUM");
-	 setfs(nameheader2, 14, "TOP", "TOP", 55, 2, "LEFT", "名字", 1,1,1);
+	 setfs(TFScore,nameheader2, 14, "TOP", "TOP", 55, 2, "LEFT", "名字", 1,1,1);
 	local killsheader2 = TFScore:CreateFontString(nil, "MEDIUM");
-	 setfs(killsheader2, 14, "TOPRIGHT", "TOPRIGHT", -65, 2, "LEFT", "击杀", 1,1,1);
+	 setfs(TFScore,killsheader2, 14, "TOPRIGHT", "TOPRIGHT", -60, 2, "LEFT", "击杀", 1,1,1);
 	local deathsheader2 = TFScore:CreateFontString(nil, "MEDIUM");
-	setfs(deathsheader2, 14, "TOPRIGHT", "TOPRIGHT", -22, 2, "LEFT", "死亡", 1,1,1);
+	setfs(TFScore,deathsheader2, 14, "TOPRIGHT", "TOPRIGHT", -22, 2, "LEFT", "死亡", 1,1,1);
 		
-		
-	playerIndicator = TFScore:CreateTexture(nil,"BACKGROUND")
-	playerIndicator:SetTexture(1, 1, 1, 0.2)
-	playerIndicator:SetWidth(320)
-	playerIndicator:SetHeight(20)
-	playerIndicator:SetPoint("CENTER")
-	playerIndicator:Hide()
 		
 	local st = {"击杀:", "死亡:", "治疗输出:", "伤害输出:", "荣誉击杀:", "获得荣誉:", nil, nil, nil, nil, nil, nil};
 
 	for i=1, 12 do
 		psname[i] = TFScore:CreateFontString(nil, "MEDIUM");
-		setfs(psname[i], 14, "BOTTOMRIGHT", "BOTTOMRIGHT", ((208*floor((i-1)/4))-460), (52-(15*floor((i-1)%4))), "RIGHT", st[i], 1,1,1);
+		setfs(TFScore,psname[i], 14, "BOTTOMRIGHT", "BOTTOMRIGHT", ((208*floor((i-1)/4))-460), (52-(15*floor((i-1)%4))), "RIGHT", st[i], 1,1,1);
 		pstats[i] = TFScore:CreateFontString(nil, "MEDIUM");
-		setfs(pstats[i], 14, "BOTTOMLEFT", "BOTTOMRIGHT", ((208*floor((i-1)/4))-460), (52-(15*floor((i-1)%4))), "LEFT", nil, 1,1,1);
-		end
-		
-		
-	for i=1, 15 do
-		hnames[i] = TFScore:CreateFontString(nil, "MEDIUM");
-		setfs(hnames[i], 16, "TOPLEFT", "TOP", 40, -(i*22), "LEFT", nil, 1, 0.25, 0.2);
+		setfs(TFScore,pstats[i], 14, "BOTTOMLEFT", "BOTTOMRIGHT", ((208*floor((i-1)/4))-460), (52-(15*floor((i-1)%4))), "LEFT", nil, 1,1,1);
+	end
+
+	--scoreframe scrollable
+	local aScoreframe = CreateFrame("ScrollFrame", "ascoreframe", TFScore, "UIPanelScrollFrameTemplate");
+	aScoreframe:SetPoint("TOPLEFT",TFScore,"TOPLEFT",10,-20)
+	aScoreframe:SetSize(340,365)
+	aScoreframe.ScrollBar:SetAlpha(0)
+
+	aScoreChild = CreateFrame("Frame","aScoreChild",aScoreframe)
+	aScoreChild:SetSize(aScoreframe:GetWidth(),aScoreframe:GetHeight())
+	aScoreframe:SetScrollChild(aScoreChild)
+
+	local hScoreframe = CreateFrame("ScrollFrame", "hscoreframe", TFScore, "UIPanelScrollFrameTemplate");
+	hScoreframe:SetPoint("TOPLEFT",TFScore,"TOP",10,-20)
+	hScoreframe:SetSize(340,365)
+	hScoreframe.ScrollBar:SetAlpha(0)
+
+	hScoreChild = CreateFrame("Frame","hScoreChild",hScoreframe)
+	hScoreChild:SetSize(hScoreframe:GetWidth(),hScoreframe:GetHeight())
+	hScoreframe:SetScrollChild(hScoreChild)
+
+	alliancePlayerIndicator = aScoreChild:CreateTexture(nil,"BACKGROUND")
+	alliancePlayerIndicator:SetTexture(1, 1, 1, 0.1)
+	alliancePlayerIndicator:SetWidth(320)
+	alliancePlayerIndicator:SetHeight(20)
+	alliancePlayerIndicator:SetPoint("CENTER")
+	alliancePlayerIndicator:Hide()
+
+	hordePlayerIndicator = hScoreChild:CreateTexture(nil,"BACKGROUND")
+	hordePlayerIndicator:SetTexture(1, 1, 1, 0.1)
+	hordePlayerIndicator:SetWidth(320)
+	hordePlayerIndicator:SetHeight(20)
+	hordePlayerIndicator:SetPoint("CENTER")
+	hordePlayerIndicator:Hide()
+
+	for i=1, 120 do
+
+		--horde names
+		hnames[i] = hScoreChild:CreateFontString(nil, "MEDIUM");
+		setfs(hScoreChild,hnames[i], 16, "TOPLEFT", "TOPLEFT", 35, -((i - 1)*22), "LEFT", nil, 1, 0.25, 0.2);
 		hnames[i]:SetWidth(220);
-		hkb[i] = TFScore:CreateFontString(nil, "MEDIUM");
-		setfs(hkb[i], 16, "TOPRIGHT", "TOPRIGHT", -40, -(i*22), "LEFT", nil, 1, 0.25, 0.2);
+
+		hkb[i] = hScoreChild:CreateFontString(nil, "MEDIUM");
+		setfs(hScoreChild,hkb[i], 16, "TOPRIGHT", "TOPRIGHT", -45, -((i -1)*22), "LEFT", nil, 1, 0.25, 0.2);
 		hkb[i]:SetWidth(40);
-		hdeaths[i] = TFScore:CreateFontString(nil, "MEDIUM");
-		setfs(hdeaths[i], 16, "TOPRIGHT", "TOPRIGHT", 0, -(i*22), "LEFT", nil, 1, 0.25, 0.2);
+
+
+		hdeaths[i] = hScoreChild:CreateFontString(nil, "MEDIUM");
+		setfs(hScoreChild,hdeaths[i], 16, "TOPRIGHT", "TOPRIGHT", -5, -((i - 1)*22), "LEFT", nil, 1, 0.25, 0.2);
 		hdeaths[i]:SetWidth(40);
-		hclass[i] = TFScore:CreateTexture(nil,"MEDIUM");
+
+		hclass[i] = hScoreChild:CreateTexture(nil,"MEDIUM");
 		hclass[i]:SetWidth(16);
 		hclass[i]:SetHeight(16);
-		hclass[i]:SetPoint("TOPLEFT", TFScore, "TOP", 20, -(1+i*22));
+		hclass[i]:SetPoint("TOPLEFT", hScoreChild, "TOPLEFT", 15, -(1+(i - 1)*22));
 		hclass[i]:SetTexture("Interface\\Glues\\CharacterCreate\\UI-CharacterCreate-Classes");
+
 		hclass[i]:SetTexCoord(1, 1, 1, 1);
-		anames[i] = TFScore:CreateFontString(nil, "MEDIUM");
-		setfs(anames[i], 16, "TOPLEFT", "TOPLEFT", 45, -(i*22), "LEFT", nil, 0.62, 0.8, 0.98);
+
+		--alliance names
+		anames[i] = aScoreChild:CreateFontString(nil, "MEDIUM");
+		setfs(aScoreChild,anames[i], 16, "TOPLEFT", "TOPLEFT", 35, -((i - 1)*22), "LEFT", nil, 0.62, 0.8, 0.98);
 		anames[i]:SetWidth(220);
-		akb[i] = TFScore:CreateFontString(nil, "MEDIUM");
-		setfs(akb[i], 16, "TOP", "TOP", -50, -(i*22), "LEFT", nil, 0.62, 0.8, 0.98);
+
+		akb[i] = aScoreChild:CreateFontString(nil, "MEDIUM");
+		setfs(aScoreChild,akb[i], 16, "TOPRIGHT", "TOPRIGHT", -45, -((i - 1)*22), "LEFT", nil, 0.62, 0.8, 0.98);
 		akb[i]:SetWidth(40);
-		adeaths[i] = TFScore:CreateFontString(nil, "MEDIUM");
-		setfs(adeaths[i], 16, "TOP", "TOP", -10, -(i*22), "LEFT", nil, 0.62, 0.8, 0.98);
+
+		adeaths[i] = aScoreChild:CreateFontString(nil, "MEDIUM");
+		setfs(aScoreChild,adeaths[i], 16, "TOPRIGHT", "TOPRIGHT", -5, -((i-1)*22), "LEFT", nil, 0.62, 0.8, 0.98);
 		adeaths[i]:SetWidth(40);
-		aclass[i] = TFScore:CreateTexture(nil,"MEDIUM");
+
+		aclass[i] = aScoreChild:CreateTexture(nil,"MEDIUM");
 		aclass[i]:SetWidth(16);
 		aclass[i]:SetHeight(16);
-		aclass[i]:SetPoint("TOPLEFT", 25, -(1+i*22));
+		aclass[i]:SetPoint("TOPLEFT", aScoreChild, "TOPLEFT", 15, -(1+(i - 1)*22));
 		aclass[i]:SetTexture("Interface\\Glues\\CharacterCreate\\UI-CharacterCreate-Classes");
 		aclass[i]:SetTexCoord(1, 1, 1, 1);
 	end;	
@@ -282,11 +344,12 @@ TFScore:Hide();
 tfinit = 1;
 
 local function updateHorde()
-	playerIndicator:Hide();
+	hordePlayerIndicator:Hide();
 	local k=1;
 	local name, killingBlows, honorableKills, deaths, honorGained, faction, classToken, damageDone, healingDone, temp;
-	for i=1, 15 do
-		while k<81 do
+	local num = GetfactionMaxNum(activeBg)
+	for i=1,num do
+		while k< num * 2 +1 do
 			_, _, _, _, _, faction = GetBattlefieldScore(k);
 			k=k+1;
 			if faction==0 then break end
@@ -294,7 +357,7 @@ local function updateHorde()
 		name, killingBlows, honorableKills, deaths, honorGained, faction, _, _,_, classToken, damageDone, healingDone = GetBattlefieldScore(k-1);
 			if ( name ) then
 				hnames[i]:SetText(name);
-				if(db.isNameClassColor) then
+				if(db.isNameClassColor and name~=UnitName("player")) then
 					local r,g,b = GetClassColor(classToken)
 					hnames[i]:SetVertexColor(r,g,b)
 				else
@@ -305,6 +368,11 @@ local function updateHorde()
 				
 				t1,t2,t3,t4 = unpack(CLASS_ICON_TCOORDS[classToken]);
 				hclass[i]:SetTexCoord(t1,t2,t3,t4);
+
+				hclass[i]:Show()
+				hnames[i]:Show()
+				hkb[i]:Show()
+				hdeaths[i]:Show()	
 				
 			else
 				hnames[i]:SetText(nil);
@@ -313,23 +381,21 @@ local function updateHorde()
 				hclass[i]:SetTexCoord(1, 1, 1, 1);
 			end
 			if ( name==UnitName("player") ) then
-				--自己的字体选择白色，否则部分职业颜色在绿色背景下不好看
-				hnames[i]:SetVertexColor(1,1,1)
-				hkb[i]:SetVertexColor(1,1,1)
-				hdeaths[i]:SetVertexColor(1,1,1)
 
-				playerIndicator:Show();
-				playerIndicator:ClearAllPoints();
-				playerIndicator:SetPoint("TOPRIGHT", -20, 1-(22*i));
+				hordePlayerIndicator:Show();
+				hordePlayerIndicator:ClearAllPoints();
+				hordePlayerIndicator:SetPoint("TOPRIGHT", -20, 1-(22*(i - 1)));
 			end
 	end
 end
 
 local function updateAlliance()
+	alliancePlayerIndicator:Hide();
 	local k=1
 	local name, killingBlows, honorableKills, deaths, honorGained, faction, classToken, damageDone, healingDone, temp
-	for i=1, 15 do
-		while k<81 do
+	local num =  GetfactionMaxNum(activeBg)
+	for i=1,num do
+		while k<num * 2 + 1 do
 			_, _, _, _, _, faction = GetBattlefieldScore(k)
 			k=k+1
 			
@@ -339,7 +405,7 @@ local function updateAlliance()
 		name, killingBlows, honorableKills, deaths, honorGained, faction, _, _,_, classToken, damageDone, healingDone = GetBattlefieldScore(k-1)
 		if ( name ) then
 			anames[i]:SetText(name)
-			if(db.isNameClassColor) then
+			if(db.isNameClassColor and name~=UnitName("player")) then
 				local r,g,b = GetClassColor(classToken)
 				anames[i]:SetVertexColor(r,g,b)
 			else
@@ -350,6 +416,11 @@ local function updateAlliance()
 					
 			t1,t2,t3,t4 = unpack(CLASS_ICON_TCOORDS[classToken])
 			aclass[i]:SetTexCoord(t1,t2,t3,t4);
+
+			aclass[i]:Show()
+			anames[i]:Show()
+			akb[i]:Show()
+			adeaths[i]:Show()
 		else
 			anames[i]:SetText(nil)
 			akb[i]:SetText(nil)
@@ -357,14 +428,10 @@ local function updateAlliance()
 			aclass[i]:SetTexCoord(1, 1, 1, 1)
 		end
 		if ( name==UnitName("player") ) then
-			--自己的字体选择白色，否则部分职业颜色在绿色背景下不好看
-			anames[i]:SetVertexColor(1,1,1)
-			akb[i]:SetVertexColor(1,1,1)
-			adeaths[i]:SetVertexColor(1,1,1)
 
-			playerIndicator:Show()
-			playerIndicator:ClearAllPoints()
-			playerIndicator:SetPoint("TOPLEFT", 20, 1-(22*i))
+			alliancePlayerIndicator:Show()
+			alliancePlayerIndicator:ClearAllPoints()
+			alliancePlayerIndicator:SetPoint("TOPLEFT", 20, 1-(22*(i - 1)))
 		end		
 	end
 end
@@ -470,6 +537,20 @@ local function updateMisc()
 
 	numAllianceText:SetText(numAlliance.." 玩家")
 	numHordeText:SetText(numHorde.." 玩家")
+
+	for i = numAlliance + 1,120 do
+		aclass[i]:Hide()
+		anames[i]:Hide()
+		akb[i]:Hide()
+		adeaths[i]:Hide()
+	end
+
+	for i = numHorde + 1,120 do
+		hclass[i]:Hide()
+		hnames[i]:Hide()
+		hkb[i]:Hide()
+		hdeaths[i]:Hide()	
+	end
 	
 
 	
@@ -488,8 +569,12 @@ local function updateScores()
 	for i = 1, GetMaxBattlefieldID() do
 		status, temp = GetBattlefieldStatus(i)
 		if status == "active" then
+			activeBg = temp
 			if temp == "奥特兰克山谷" then
 				pattern = "(%d+)"
+			elseif temp == "冬拥湖" then
+				--冬拥湖暂时不显示比分（只有载具数量）
+				return
 			else
 				pattern = "(%d+)/(.+)"
 			end
@@ -508,21 +593,21 @@ local function updateScores()
 	end
 end
 	
-TFScore:SetScript("OnEvent", function(_,event,_)
+TFScore:SetScript("OnEvent", function(a1,event,a2)
 	if(event=="UPDATE_BATTLEFIELD_SCORE") and tfinit then
 		updateHorde()
 		updateAlliance()
 		updateMisc()
 	end
 	
-	if(event=="UPDATE_UI_WIDGET" or event == "PLAYER_ENTERING_BATTLEGROUND") and tfinit then
+	if(event=="UPDATE_UI_WIDGET" or event == "UPDATE_BATTLEFIELD_STATUS") and tfinit then
 		updateScores()	
 	end
 end)
 
 TFScore:RegisterEvent"UPDATE_BATTLEFIELD_SCORE"
 TFScore:RegisterEvent"UPDATE_UI_WIDGET"
-TFScore:RegisterEvent"PLAYER_ENTERING_BATTLEGROUND"
+TFScore:RegisterEvent"UPDATE_BATTLEFIELD_STATUS"
 
 BINDING_HEADER_TFKB = "TF Scoreboard"
 BINDING_NAME_TFONDOWN = "show while held down"
